@@ -282,9 +282,15 @@ async def submit_song_request(
                 )
             elif verification_result.status == "AMOUNT_MISMATCH":
                 raise HTTPException(status_code=400, detail=verification_result.message)
+            elif verification_result.status in ("WRONG_RECEIVER", "EXPIRED_SLIP", "INVALID_SLIP"):
+                raise HTTPException(status_code=400, detail=verification_result.message)
             elif verification_result.status in ("MANUAL_REVIEW", "SUSPICIOUS", "NO_QR"):
-                # Queued but marked pending verification for musician to inspect
-                status = "queued" if band["demo_mode"] else "pending_slip"
+                if not band["demo_mode"]:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=verification_result.message or "ไม่พบ QR Code บนสลิป กรุณาอัปโหลดสลิปธนาคารที่มี Mini-QR ชัดเจน"
+                    )
+                status = "queued"
 
         # Determine queue order
         cursor.execute("SELECT COUNT(*) as cnt FROM requests WHERE band_id = ? AND status = 'queued'", (band["id"],))

@@ -145,7 +145,9 @@ async def verify_with_slipok(
     branch_id: str | None,
     raw_qr: str | None,
     image_bytes: bytes | None,
-    expected_amount: float | None = None
+    expected_amount: float | None = None,
+    expected_promptpay: str | None = None,
+    expected_receiver_name: str | None = None
 ) -> SlipVerificationResult | None:
     """Calls SlipOK Live API (https://api.slipok.com/api/v2/detect)."""
     if not api_key:
@@ -160,7 +162,7 @@ async def verify_with_slipok(
     }
     
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=12.0) as client:
             if raw_qr:
                 # Fast payload check
                 payload = {"data": raw_qr}
@@ -184,10 +186,32 @@ async def verify_with_slipok(
                     trans_ref = d.get("transRef")
                     bank_code = d.get("sendingBank")
                     sender_name = d.get("sender", {}).get("name")
-                    receiver_name = d.get("receiver", {}).get("name")
                     date_str = d.get("date")
+
+                    # Extract receiver information
+                    receiver_data = d.get("receiver", {})
+                    rec_proxy = str(receiver_data.get("proxy", {}).get("value") or "")
+                    rec_name = str(receiver_data.get("name") or receiver_data.get("account", {}).get("name", {}).get("th") or "")
+
+                    # 1. Check receiver account matching (prevent using slips transferred to other people/stores)
+                    if expected_promptpay and rec_proxy:
+                        exp_digits = "".join(ch for ch in expected_promptpay if ch.isdigit())
+                        rec_digits = "".join(ch for ch in rec_proxy if ch.isdigit())
+                        if exp_digits and rec_digits and exp_digits != rec_digits:
+                            return SlipVerificationResult(
+                                is_valid=False,
+                                status="WRONG_RECEIVER",
+                                message="สลิปนี้ไม่ได้โอนเข้าบัญชีของวง (ผู้รับเงินไม่ตรงกับบัญชีของวง)",
+                                bank_code=bank_code,
+                                trans_ref=trans_ref,
+                                amount=amount,
+                                sender_name=sender_name,
+                                receiver_name=rec_name,
+                                trans_time=date_str,
+                                verification_method="slipok_live"
+                            )
                     
-                    # Check amount match
+                    # 2. Check amount match (prevent underpayment)
                     if expected_amount and amount < expected_amount:
                         return SlipVerificationResult(
                             is_valid=False,
@@ -197,20 +221,43 @@ async def verify_with_slipok(
                             trans_ref=trans_ref,
                             amount=amount,
                             sender_name=sender_name,
-                            receiver_name=receiver_name,
+                            receiver_name=rec_name,
                             trans_time=date_str,
                             verification_method="slipok_live"
                         )
+
+                    # 3. Check transaction freshness (prevent using old slips from yesterday or last week)
+                    if date_str:
+                        try:
+                            clean_date = date_str.replace("Z", "").split(".")[0]
+                            trans_dt = datetime.datetime.fromisoformat(clean_date)
+                            now = datetime.datetime.now()
+                            diff_hours = abs((now - trans_dt).total_seconds()) / 3600
+                            if diff_hours > 8:
+                                return SlipVerificationResult(
+                                    is_valid=False,
+                                    status="EXPIRED_SLIP",
+                                    message="สลิปนี้เกินกำหนดเวลาโอน (อนุญาตเฉพาะสลิปที่โอนภายในช่วงเวลาเล่นสดวันนี้)",
+                                    bank_code=bank_code,
+                                    trans_ref=trans_ref,
+                                    amount=amount,
+                                    sender_name=sender_name,
+                                    receiver_name=rec_name,
+                                    trans_time=date_str,
+                                    verification_method="slipok_live"
+                                )
+                        except Exception:
+                            pass
                         
                     return SlipVerificationResult(
                         is_valid=True,
                         status="VERIFIED",
-                        message="สลิปถูกต้อง ผ่านการตรวจสอบจริงจาก SlipOK API (ITMX Network)",
+                        message="สลิปถูกต้อง 100% ผ่านการตรวจสอบเงินเข้าจริงจากระบบธนาคาร ITMX (SlipOK)",
                         bank_code=bank_code,
                         trans_ref=trans_ref,
                         amount=amount,
                         sender_name=sender_name,
-                        receiver_name=receiver_name,
+                        receiver_name=rec_name,
                         trans_time=date_str,
                         raw_qr=raw_qr,
                         verification_method="slipok_live"
@@ -220,7 +267,7 @@ async def verify_with_slipok(
                     return SlipVerificationResult(
                         is_valid=False,
                         status="INVALID_SLIP",
-                        message=f"SlipOK: {msg}",
+                        message=f"ธนาคารแจ้ง: {msg}",
                         verification_method="slipok_live"
                     )
     except Exception as e:
@@ -247,20 +294,25 @@ async def verify_slip(
     # 1. Try Live SlipOK API if configured
     slipok_key = band_settings.get("slipok_api_key")
     branch_id = band_settings.get("slipok_branch_id")
+    expected_pp = band_settings.get("promptpay_number")
+    expected_name = band_settings.get("promptpay_name")
+
     if slipok_key:
         live_res = await verify_with_slipok(
             api_key=slipok_key,
             branch_id=branch_id,
             raw_qr=qr_text,
             image_bytes=image_bytes,
-            expected_amount=expected_amount
+            expected_amount=expected_amount,
+            expected_promptpay=expected_pp,
+            expected_receiver_name=expected_name
         )
         if live_res is not None:
             # Check duplicate in local database as well
             if live_res.trans_ref and live_res.trans_ref in existing_trans_refs:
                 live_res.is_valid = False
                 live_res.status = "DUPLICATE"
-                live_res.message = f"สลิปนี้เคยถูกใช้ส่งขอเพลงไปแล้ว (TransRef ซ้ำ: {live_res.trans_ref})"
+                live_res.message = f"❌ สลิปนี้เคยถูกใช้ส่งขอเพลงไปแล้ว (TransRef ซ้ำ: {live_res.trans_ref})"
             return live_res
 
     # 2. Local QR Code Analysis
