@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musician Dashboard & Queue Manager | เวทีและจัดการคิวเพลง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            dark: '#0b0f19',
+                            card: '#151d30',
+                            accent: '#f43f5e',
+                            gold: '#fbbf24',
+                            neon: '#10b981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: #0b0f19;
+            min-height: 100vh;
+        }
+        .card-glass {
+            background: rgba(21, 29, 48, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .neon-glow {
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.25);
+        }
+        .gold-glow {
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.25);
+        }
+        .sortable-ghost {
+            opacity: 0.3;
+            background: rgba(6, 182, 212, 0.2);
+            border: 2px dashed #06b6d4;
+        }
+    </style>
+</head>
+<body class="text-slate-100 pb-20">
+
+    <!-- Top Navigation Bar -->
+    <header class="card-glass sticky top-0 z-40 border-b border-slate-800 px-6 py-3.5 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Band Info & Live Status -->
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md font-bold text-lg ring-2 ring-cyan-400/30">
+                    <i data-lucide="music" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 id="top-band-name" class="font-bold text-lg text-white tracking-wide">The Soundwave Band</h1>
+                        <span class="inline-flex items-center gap-1.5 text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-semibold">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            เปิดรับขอเพลง
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                        <span id="top-venue-name" class="text-cyan-400">The Moonlight Bar</span>
+                        <span>•</span>
+                        <span id="top-promptpay-info">พร้อมเพย์: 0891234567 (นายธนพล)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Links & Sound Control -->
+            <div class="flex items-center gap-2.5">
+                <!-- Sound Toggle -->
+                <button id="btn-sound-toggle" onclick="toggleSoundAlert()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-amber-300 font-semibold border border-slate-700 flex items-center gap-1.5 transition-all">
+                    <i id="sound-icon" data-lucide="volume-2" class="w-4 h-4"></i>
+                    <span id="sound-txt">เสียงเตือน: เปิด</span>
+                </button>
+
+                <!-- Stage View Fullscreen Link -->
+                <a href="/stage" target="_blank" class="px-3 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-xs text-indigo-300 font-semibold border border-indigo-500/40 flex items-center gap-1.5 transition-all">
+                    <i data-lucide="tv" class="w-4 h-4"></i>
+                    <span>จอเวที / OBS View</span>
+                </a>
+
+                <!-- Audience Link -->
+                <a href="/" target="_blank" class="px-3 py-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-xs text-cyan-300 font-semibold border border-cyan-500/40 flex items-center gap-1.5 transition-all">
+                    <i data-lucide="smartphone" class="w-4 h-4"></i>
+                    <span>หน้าลูกค้าขอเพลง</span>
+                </a>
+
+                <!-- Songs Repertoire Manager Modal Trigger -->
+                <button onclick="openSongsModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-semibold border border-slate-700 flex items-center gap-1.5 transition-all">
+                    <i data-lucide="book-open" class="w-4 h-4 text-cyan-400"></i>
+                    <span>คลังเพลงของวง</span>
+                </button>
+
+                <!-- Settings Modal Trigger -->
+                <button onclick="openSettingsModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-semibold border border-slate-700 flex items-center gap-1.5 transition-all">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>ตั้งค่า & ตรวจสลิป</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-6 mt-6 space-y-6">
+
+        <!-- Statistics Banner (Tonight's Session) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="card-glass rounded-2xl p-4 border border-amber-500/30 gold-glow flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-400 font-medium">ยอดทิปรวมคืนนี้ 💰</div>
+                    <div id="stat-total-tips" class="text-2xl font-bold text-amber-400 mt-1">0.00 ฿</div>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
+                    <i data-lucide="coins" class="w-6 h-6"></i>
+                </div>
+            </div>
+
+            <div class="card-glass rounded-2xl p-4 border border-cyan-500/20 flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-400 font-medium">คิวเพลงที่กำลังรอ ⏳</div>
+                    <div id="stat-queued-count" class="text-2xl font-bold text-cyan-400 mt-1">0 เพลง</div>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold">
+                    <i data-lucide="list-music" class="w-6 h-6"></i>
+                </div>
+            </div>
+
+            <div class="card-glass rounded-2xl p-4 border border-emerald-500/20 flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-400 font-medium">เล่นจบแล้วคืนนี้ ✅</div>
+                    <div id="stat-completed-count" class="text-2xl font-bold text-emerald-400 mt-1">0 เพลง</div>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
+                    <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                </div>
+            </div>
+
+            <div class="card-glass rounded-2xl p-4 border border-indigo-500/20 flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-400 font-medium">เพลงที่ขอทั้งหมด 🎵</div>
+                    <div id="stat-total-requests" class="text-2xl font-bold text-indigo-400 mt-1">0 เพลง</div>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
+                    <i data-lucide="music-4" class="w-6 h-6"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOW PLAYING HERO SECTION (Top Priority Display) -->
+        <div id="now-playing-container" class="card-glass rounded-2xl p-6 border-2 border-cyan-500/40 neon-glow relative overflow-hidden hidden">
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <!-- Left: Song details -->
+                <div class="flex items-start gap-5 min-w-0">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg ring-4 ring-cyan-500/20">
+                        <i data-lucide="disc-3" class="w-9 h-9 animate-spin" style="animation-duration: 5s;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-300 bg-cyan-500/20 px-3 py-1 rounded-full border border-cyan-400/30 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                                กำลังเล่นสดบนเวที (NOW PLAYING)
+                            </span>
+                            <span id="stage-table-badge" class="text-xs font-semibold text-slate-300 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700"></span>
+                        </div>
+                        <h2 id="stage-song-title" class="text-2xl md:text-3xl font-extrabold text-white tracking-wide truncate"></h2>
+                        <div class="text-sm text-slate-300 flex items-center gap-2 mt-1">
+                            <span id="stage-artist" class="font-medium text-cyan-400"></span>
+                            <span>•</span>
+                            <span id="stage-sender" class="text-slate-400"></span>
+                        </div>
+                        <div id="stage-dedication" class="text-xs text-amber-300/90 italic mt-2 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20 inline-block hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Stage Actions -->
+                <div class="flex items-center gap-3 shrink-0 w-full md:w-auto">
+                    <button id="btn-finish-song" onclick="finishCurrentSong()" class="flex-1 md:flex-none px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-lg flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="check" class="w-5 h-5"></i>
+                        <span>เล่นจบแล้ว (Finish)</span>
+                    </button>
+                    <button id="btn-requeue-song" onclick="requeueCurrentSong()" class="px-4 py-3.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition-all">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        <span>พักไว้ก่อน</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUEUE MANAGEMENT CONTROLS & SORTING BAR -->
+        <div class="card-glass rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+            
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i data-lucide="list-ordered" class="w-5 h-5 text-cyan-400"></i>
+                        <span>จัดการคิวเพลงที่ขอมา</span>
+                        <span id="queue-header-count" class="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full font-semibold">0 คิว</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">เลือกรูปแบบการจัดเรียงคิว หรือลากเปลี่ยนลำดับคิวได้อิสระ</p>
+                </div>
+
+                <!-- SORT MODE SWITCHER (Tip Priority vs Time vs Manual) -->
+                <div class="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-700/80 text-xs">
+                    <span class="text-slate-400 text-[11px] font-medium px-2">โหมดการเรียงคิว:</span>
+                    
+                    <button onclick="setSortMode('tip_priority')" id="sort-btn-tip" class="px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow">
+                        <i data-lucide="coins" class="w-3.5 h-3.5"></i>
+                        <span>ยอดทิปมาก่อน (Tip Priority)</span>
+                    </button>
+
+                    <button onclick="setSortMode('fifo_time')" id="sort-btn-time" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-medium transition-all flex items-center gap-1.5">
+                        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                        <span>ตามเวลาขอ (First-Come)</span>
+                    </button>
+
+                    <button onclick="setSortMode('manual')" id="sort-btn-manual" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-medium transition-all flex items-center gap-1.5">
+                        <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
+                        <span>ลากจัดเรียงเอง (Manual)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Queue Category Filters -->
+            <div class="flex items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2">
+                    <button onclick="filterQueueTab('queued')" id="qtab-btn-queued" class="px-3.5 py-1.5 rounded-lg font-semibold bg-cyan-500 text-white flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-white"></span>
+                        <span>คิวรอเล่น (<span id="qtab-cnt-queued">0</span>)</span>
+                    </button>
+                    <button onclick="filterQueueTab('pending_slip')" id="qtab-btn-pending" class="px-3.5 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                        <span>สลิปต้องสงสัย / รอตรวจ (<span id="qtab-cnt-pending">0</span>)</span>
+                    </button>
+                    <button onclick="filterQueueTab('history')" id="qtab-btn-history" class="px-3.5 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white flex items-center gap-1.5">
+                        <span>ประวัติเล่นจบแล้ว (<span id="qtab-cnt-history">0</span>)</span>
+                    </button>
+                </div>
+
+                <div class="text-[11px] text-slate-400 hidden md:block">
+                    💡 คลิกปุ่ม "เริ่มเล่น" หรือใช้ลูกศรขึ้น-ลงเพื่อเลื่อนคิวได้ทันที
+                </div>
+            </div>
+
+            <!-- QUEUE ITEMS LIST CONTAINER (Supports Drag and Drop) -->
+            <div id="musician-queue-list" class="space-y-3 min-h-[150px]">
+                <!-- Dynamically Rendered Cards -->
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- SLIP INSPECTION MODAL (ตรวจสอบสลิปอย่างละเอียด) -->
+    <div id="slip-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="card-glass max-w-lg w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-cyan-400"></i>
+                    <h3 class="font-bold text-white text-base">รายละเอียดสลิปโอนเงิน (ITMX Verification)</h3>
+                </div>
+                <button onclick="closeSlipModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Slip Image Preview -->
+            <div class="bg-slate-950 p-2 rounded-xl text-center border border-slate-800">
+                <img id="modal-slip-image" src="" alt="Bank Slip" class="max-h-72 mx-auto object-contain rounded-lg shadow">
+            </div>
+
+            <!-- Verification Metadata Breakdown -->
+            <div class="bg-slate-900/90 p-4 rounded-xl text-xs space-y-2 border border-slate-800">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">สถานะการตรวจสอบ:</span>
+                    <span id="modal-slip-status-badge" class="font-bold px-2 py-0.5 rounded text-xs"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">ธนาคารต้นทาง:</span>
+                    <span id="modal-slip-bank" class="font-semibold text-white"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">รหัสอ้างอิงธุรกรรม (TransRef):</span>
+                    <span id="modal-slip-ref" class="font-mono text-cyan-400 font-bold"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">ยอดเงินที่ตรวจพบ:</span>
+                    <span id="modal-slip-amount" class="font-bold text-amber-400 text-sm"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">วิธีที่ใช้ตรวจสอบ:</span>
+                    <span id="modal-slip-method" class="text-slate-300"></span>
+                </div>
+                <div class="pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                    <span id="modal-slip-msg"></span>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex items-center gap-3 pt-2">
+                <button id="modal-btn-approve" onclick="approveCurrentSlip()" class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-all flex items-center justify-center gap-1.5">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span>อนุมัติสลิป & นำเข้าคิว</span>
+                </button>
+                <button id="modal-btn-reject" onclick="rejectCurrentSlip()" class="px-4 py-2.5 rounded-xl font-semibold text-xs bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white transition-all border border-rose-500/30 flex items-center gap-1.5">
+                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                    <span>ปฏิเสธคำขอ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPERTOIRE SONGS MODAL (จัดการคลังเพลงของวง) -->
+    <div id="songs-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="card-glass max-w-2xl w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="book-marked" class="w-5 h-5 text-cyan-400"></i>
+                    <h3 class="font-bold text-white text-base">จัดการคลังเพลงของวง (Song Catalog)</h3>
+                </div>
+                <button onclick="closeSongsModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Add New Song Inline Form -->
+            <form id="add-song-form" onsubmit="submitNewSong(event)" class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
+                <input type="text" id="new-song-title" required placeholder="ชื่อเพลงใหม่ *" class="md:col-span-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                <input type="text" id="new-song-artist" placeholder="ศิลปิน" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                <select id="new-song-genre" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    <option value="Pop">Pop</option>
+                    <option value="Rock">Rock</option>
+                    <option value="Indie">Indie</option>
+                    <option value="ลูกทุ่ง">ลูกทุ่ง/เพื่อชีวิต</option>
+                    <option value="International">สากล</option>
+                </select>
+                <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold rounded-lg px-3 py-2 flex items-center justify-center gap-1 transition-all">
+                    <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มเพลง
+                </button>
+            </form>
+
+            <!-- Repertoire Song List -->
+            <div class="relative">
+                <input type="text" id="admin-song-search" oninput="filterAdminSongs()" placeholder="ค้นหาเพลงในคลัง..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+            </div>
+
+            <div id="admin-song-list" class="space-y-1.5 max-h-80 overflow-y-auto pr-1 text-xs">
+                <!-- Dynamically Rendered -->
+            </div>
+        </div>
+    </div>
+
+    <!-- BAND & SLIP SETTINGS MODAL -->
+    <div id="settings-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="card-glass max-w-lg w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="settings" class="w-5 h-5 text-cyan-400"></i>
+                    <h3 class="font-bold text-white text-base">ตั้งค่าวและระบบตรวจสอบสลิป</h3>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="settings-form" onsubmit="saveSettings(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">ชื่อวงดนตรี</label>
+                    <input type="text" id="set-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">ชื่อร้าน / บาร์ที่เล่นสด</label>
+                    <input type="text" id="set-venue" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">เบอร์พร้อมเพย์ / เลขบัตร ปชช.</label>
+                        <input type="text" id="set-promptpay" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">ชื่อบัญชีรับเงิน (แสดงหน้า QR)</label>
+                        <input type="text" id="set-acc-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-300 mb-1">ยอดทิปขั้นต่ำในการขอเพลง (บาท)</label>
+                    <input type="number" id="set-min-tip" min="0" step="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <!-- SlipOK Live Integration Config -->
+                <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-amber-300 flex items-center gap-1.5">
+                            <i data-lucide="shield" class="w-4 h-4"></i> ระบบเชื่อมต่อ SlipOK API (ตรวจสอบเงินเข้าจริง)
+                        </span>
+                        <a href="https://slipok.com" target="_blank" class="text-[10px] text-cyan-400 underline">ขอ API Key</a>
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                        หากระบุ API Key ระบบจะเช็คไปยังเครือข่าย ITMX ของธนาคารโดยตรงว่ามีเงินเข้าบัญชีจริงตามยอดหรือไม่ หากไม่ระบุ ระบบจะใช้เอนจินสแกน Mini-QR และตรวจจับสลิปซ้ำ (Anti-Duplicate) ให้อัตโนมัติ
+                    </p>
+                    <div class="space-y-2 pt-1">
+                        <input type="text" id="set-slipok-key" placeholder="SlipOK API Key (x-authorization)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-amber-400">
+                        <input type="text" id="set-slipok-branch" placeholder="Branch ID (ถ้ามี)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-amber-400">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="set-demo-mode" class="rounded border-slate-700 text-cyan-500 focus:ring-0">
+                        <span class="text-slate-300">เปิดโหมดทดสอบ (Sandbox / Demo Mode)</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl font-bold text-xs bg-cyan-500 hover:bg-cyan-400 text-white transition-all shadow-lg mt-2">
+                    บันทึกการตั้งค่า
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900/95 text-white border border-slate-700 px-4 py-3 rounded-xl text-xs shadow-2xl flex items-center gap-2 transition-all opacity-0 pointer-events-none">
+        <i id="toast-icon" data-lucide="info" class="w-4 h-4 text-cyan-400"></i>
+        <span id="toast-msg">แจ้งเตือน</span>
+    </div>
+
+    <script>
+        let queueData = { active: [], history: [] };
+        let currentSortMode = 'tip_priority';
+        let activeQueueTab = 'queued';
+        let bandSettings = {};
+        let repertoireSongs = [];
+        let currentInspectingRequest = null;
+        let soundEnabled = true;
+        let sortableInstance = null;
+        let ws = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadBandInfo();
+            loadQueue();
+            loadStats();
+            setupSortable();
+            setupWebSocket();
+        });
+
+        // Web Audio Synthesizer for Stage Chime
+        function playChime() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                
+                // Note 1: E5
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(659.25, now);
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.8);
+
+                // Note 2: B5
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(987.77, now + 0.15);
+                gain2.gain.setValueAtTime(0.35, now + 0.15);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.15);
+                osc2.stop(now + 1.2);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function toggleSoundAlert() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const txt = document.getElementById('sound-txt');
+            if (soundEnabled) {
+                txt.textContent = 'เสียงเตือน: เปิด';
+                icon.setAttribute('data-lucide', 'volume-2');
+                playChime();
+            } else {
+                txt.textContent = 'เสียงเตือน: ปิด';
+                icon.setAttribute('data-lucide', 'volume-x');
+            }
+            lucide.createIcons();
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const txt = document.getElementById('toast-msg');
+            txt.textContent = msg;
+            icon.className = isError ? 'w-4 h-4 text-rose-400' : 'w-4 h-4 text-cyan-400';
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3500);
+        }
+
+        async function loadBandInfo() {
+            try {
+                const res = await fetch('/api/band');
+                bandSettings = await res.json();
+                document.getElementById('top-band-name').textContent = bandSettings.name;
+                document.getElementById('top-venue-name').textContent = bandSettings.venue_name;
+                document.getElementById('top-promptpay-info').textContent = `พร้อมเพย์: ${bandSettings.promptpay_number} (${bandSettings.promptpay_name})`;
+                currentSortMode = bandSettings.sort_mode || 'tip_priority';
+                updateSortButtonsUI(currentSortMode);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/musician/stats');
+                const s = await res.json();
+                document.getElementById('stat-total-tips').textContent = `${(s.total_tips || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} ฿`;
+                document.getElementById('stat-queued-count').textContent = `${s.queued_count || 0} เพลง`;
+                document.getElementById('stat-completed-count').textContent = `${s.completed_count || 0} เพลง`;
+                document.getElementById('stat-total-requests').textContent = `${s.total_requests || 0} เพลง`;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadQueue() {
+            try {
+                const res = await fetch('/api/musician/queue');
+                queueData = await res.json();
+                currentSortMode = queueData.sort_mode || currentSortMode;
+                updateSortButtonsUI(currentSortMode);
+                renderNowPlayingSection();
+                renderQueueList();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderNowPlayingSection() {
+            const playing = queueData.active.find(r => r.status === 'playing');
+            const container = document.getElementById('now-playing-container');
+            if (!playing) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            document.getElementById('stage-song-title').textContent = playing.song_title;
+            document.getElementById('stage-artist').textContent = playing.artist || 'ศิลปินต้นฉบับ';
+            document.getElementById('stage-table-badge').textContent = `โต๊ะ ${playing.table_no || '-'}`;
+            document.getElementById('stage-sender').textContent = `ขอโดย: ${playing.sender_name || 'ผู้ฟังใจดี'}`;
+            
+            const noteEl = document.getElementById('stage-dedication');
+            if (playing.dedication_note) {
+                noteEl.textContent = `ข้อความ: "${playing.dedication_note}"`;
+                noteEl.classList.remove('hidden');
+            } else {
+                noteEl.classList.add('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        function renderQueueList() {
+            const list = document.getElementById('musician-queue-list');
+            const queuedList = queueData.active.filter(r => r.status === 'queued');
+            const pendingList = queueData.active.filter(r => r.status === 'pending_slip');
+            const historyList = queueData.history;
+
+            document.getElementById('qtab-cnt-queued').textContent = queuedList.length;
+            document.getElementById('qtab-cnt-pending').textContent = pendingList.length;
+            document.getElementById('qtab-cnt-history').textContent = historyList.length;
+            document.getElementById('queue-header-count').textContent = `${queuedList.length} คิว`;
+
+            let displayItems = [];
+            if (activeQueueTab === 'queued') {
+                displayItems = queuedList;
+            } else if (activeQueueTab === 'pending_slip') {
+                displayItems = pendingList;
+            } else {
+                displayItems = historyList;
+            }
+
+            if (displayItems.length === 0) {
+                list.innerHTML = `
+                    <div class="card-glass rounded-xl p-8 text-center border border-slate-800 text-slate-500 text-xs">
+                        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                        <p>ไม่มีเพลงในหมวดหมู่นี้</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            list.innerHTML = displayItems.map((item, idx) => {
+                const isPending = item.status === 'pending_slip';
+                const isCompleted = item.status === 'completed';
+                const isRejected = item.status === 'rejected';
+
+                return `
+                    <div data-id="${item.id}" class="card-glass p-4 rounded-xl border ${isPending ? 'border-amber-500/50 bg-amber-950/10' : 'border-slate-800 hover:border-slate-700'} flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all group">
+                        
+                        <!-- Left: Reorder Handle & Info -->
+                        <div class="flex items-start gap-3 min-w-0 flex-1">
+                            <!-- Drag Handle -->
+                            ${activeQueueTab === 'queued' ? `
+                                <div class="cursor-grab active:cursor-grabbing text-slate-500 hover:text-cyan-400 p-1 rounded hover:bg-slate-800 shrink-0 mt-1">
+                                    <i data-lucide="grip-vertical" class="w-5 h-5"></i>
+                                </div>
+                            ` : ''}
+
+                            <!-- Order Badge -->
+                            <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                                #${idx + 1}
+                            </div>
+
+                            <!-- Details -->
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h3 class="font-bold text-white text-base truncate">${item.song_title}</h3>
+                                    ${item.artist ? `<span class="text-xs text-slate-400">(${item.artist})</span>` : ''}
+                                    <span class="text-xs bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded font-medium border border-cyan-500/20">
+                                        โต๊ะ ${item.table_no || '-'}
+                                    </span>
+                                </div>
+                                <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span>ผู้ขอ: ${item.sender_name || 'ผู้ฟัง'}</span>
+                                    <span>•</span>
+                                    <span class="text-slate-500">${item.created_at || ''}</span>
+                                </div>
+                                ${item.dedication_note ? `
+                                    <div class="text-xs text-amber-300 italic bg-amber-500/10 px-2.5 py-1 rounded-md mt-1.5 border border-amber-500/20 inline-block">
+                                        ข้อความ: "${item.dedication_note}"
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Right: Tip, Slip Verification Badge & Stage Actions -->
+                        <div class="flex items-center gap-3 shrink-0 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-800 pt-3 md:pt-0">
+                            
+                            <!-- Tip & Slip Inspection Pill -->
+                            <div class="flex items-center gap-2">
+                                ${item.tip_amount > 0 ? `
+                                    <div class="flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold px-3 py-1 rounded-xl text-xs">
+                                        <i data-lucide="coins" class="w-3.5 h-3.5"></i>
+                                        <span>${item.tip_amount.toLocaleString()}฿</span>
+                                    </div>
+                                ` : `
+                                    <span class="text-xs text-slate-500 px-2">ขอฟรี</span>
+                                `}
+
+                                ${item.slip_filename ? `
+                                    <button onclick="inspectSlip(${item.id})" class="px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                                        item.slip_verified ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
+                                    }">
+                                        <i data-lucide="${item.slip_verified ? 'shield-check' : 'alert-circle'}" class="w-3.5 h-3.5"></i>
+                                        <span>${item.slip_verified ? 'สลิปผ่าน ✅' : 'ตรวจสลิป ⚠️'}</span>
+                                    </button>
+                                ` : ''}
+                            </div>
+
+                            <!-- Stage Action Controls -->
+                            <div class="flex items-center gap-1.5">
+                                ${activeQueueTab === 'queued' ? `
+                                    <!-- Play Now -->
+                                    <button onclick="playSong(${item.id})" class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-cyan-500 hover:bg-cyan-400 text-white shadow flex items-center gap-1.5 transition-all">
+                                        <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                                        <span>เริ่มเล่น</span>
+                                    </button>
+                                    
+                                    <!-- Move Up / Down -->
+                                    <button onclick="moveQueueItem(${item.id}, 'up')" title="เลื่อนขึ้น" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+                                        <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="moveQueueItem(${item.id}, 'down')" title="เลื่อนลง" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+                                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <!-- Reject -->
+                                    <button onclick="rejectSong(${item.id})" title="ปฏิเสธเพลง" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                ` : ''}
+
+                                ${activeQueueTab === 'pending_slip' ? `
+                                    <button onclick="inspectSlip(${item.id})" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-1">
+                                        <i data-lucide="eye" class="w-3.5 h-3.5"></i> ตรวจสลิป
+                                    </button>
+                                    <button onclick="rejectSong(${item.id})" class="px-3 py-1.5 rounded-xl font-semibold text-xs bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30">
+                                        ปฏิเสธ
+                                    </button>
+                                ` : ''}
+
+                                ${activeQueueTab === 'history' ? `
+                                    <span class="text-xs ${isCompleted ? 'text-emerald-400' : 'text-rose-400'} font-medium">
+                                        ${isCompleted ? 'เล่นจบแล้ว' : 'ปฏิเสธแล้ว'}
+                                    </span>
+                                ` : ''}
+                            </div>
+
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // Setup Drag and Drop with SortableJS
+        function setupSortable() {
+            const el = document.getElementById('musician-queue-list');
+            sortableInstance = new Sortable(el, {
+                animation: 200,
+                handle: '.cursor-grab',
+                ghostClass: 'sortable-ghost',
+                onEnd: async function () {
+                    const ids = Array.from(el.children).map(child => parseInt(child.getAttribute('data-id'))).filter(Boolean);
+                    if (ids.length > 0) {
+                        try {
+                            const res = await fetch('/api/musician/queue/reorder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ordered_ids: ids })
+                            });
+                            if (res.ok) {
+                                currentSortMode = 'manual';
+                                updateSortButtonsUI('manual');
+                                showToast("จัดเรียงคิวใหม่เรียบร้อยแล้ว");
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }
+            });
+        }
+
+        async function setSortMode(mode) {
+            currentSortMode = mode;
+            updateSortButtonsUI(mode);
+            try {
+                const res = await fetch('/api/musician/settings/sort-mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode })
+                });
+                if (res.ok) {
+                    showToast(`เปลี่ยนโหมดจัดเรียงคิวเป็น: ${mode === 'tip_priority' ? 'ตามยอดทิป' : mode === 'fifo_time' ? 'ตามเวลาขอ' : 'ลากจัดเรียงเอง'}`);
+                    loadQueue();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateSortButtonsUI(mode) {
+            const btnTip = document.getElementById('sort-btn-tip');
+            const btnTime = document.getElementById('sort-btn-time');
+            const btnManual = document.getElementById('sort-btn-manual');
+
+            const activeClass = 'px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow';
+            const inactiveClass = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-medium transition-all flex items-center gap-1.5';
+
+            btnTip.className = mode === 'tip_priority' ? activeClass : inactiveClass;
+            btnTime.className = mode === 'fifo_time' ? activeClass : inactiveClass;
+            btnManual.className = mode === 'manual' ? activeClass : inactiveClass;
+        }
+
+        function filterQueueTab(tab) {
+            activeQueueTab = tab;
+            ['queued', 'pending_slip', 'history'].forEach(t => {
+                const btn = document.getElementById(`qtab-btn-${t}`);
+                if (t === tab) {
+                    btn.className = 'px-3.5 py-1.5 rounded-lg font-semibold bg-cyan-500 text-white flex items-center gap-1.5';
+                } else {
+                    btn.className = 'px-3.5 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white flex items-center gap-1.5';
+                }
+            });
+            renderQueueList();
+        }
+
+        // Musician Actions
+        async function playSong(id) {
+            try {
+                const res = await fetch(`/api/musician/request/${id}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'play' })
+                });
+                if (res.ok) {
+                    showToast("เริ่มเล่นเพลงนี้บนเวทีเรียบร้อย");
+                    loadQueue();
+                    loadStats();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function finishCurrentSong() {
+            const playing = queueData.active.find(r => r.status === 'playing');
+            if (!playing) return;
+            try {
+                const res = await fetch(`/api/musician/request/${playing.id}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'complete' })
+                });
+                if (res.ok) {
+                    showToast("บันทึกการเล่นเพลงจบแล้ว");
+                    loadQueue();
+                    loadStats();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function requeueCurrentSong() {
+            const playing = queueData.active.find(r => r.status === 'playing');
+            if (!playing) return;
+            try {
+                const res = await fetch(`/api/musician/request/${playing.id}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'requeue' })
+                });
+                if (res.ok) {
+                    showToast("ส่งเพลงกลับเข้าคิวแล้ว");
+                    loadQueue();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function rejectSong(id) {
+            if (!confirm("ต้องการปฏิเสธคำขอเพลงนี้ใช่หรือไม่?")) return;
+            try {
+                const res = await fetch(`/api/musician/request/${id}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'reject', reason: 'วงเล่นเพลงนี้ไม่ได้ในรอบนี้' })
+                });
+                if (res.ok) {
+                    showToast("ปฏิเสธคำขอเพลงเรียบร้อย");
+                    loadQueue();
+                    loadStats();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function moveQueueItem(id, direction) {
+            const queued = queueData.active.filter(r => r.status === 'queued');
+            const idx = queued.findIndex(r => r.id === id);
+            if (idx === -1) return;
+            if (direction === 'up' && idx === 0) return;
+            if (direction === 'down' && idx === queued.length - 1) return;
+
+            const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+            const temp = queued[idx];
+            queued[idx] = queued[targetIdx];
+            queued[targetIdx] = temp;
+
+            const ordered_ids = queued.map(r => r.id);
+            try {
+                const res = await fetch('/api/musician/queue/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ordered_ids })
+                });
+                if (res.ok) {
+                    currentSortMode = 'manual';
+                    updateSortButtonsUI('manual');
+                    loadQueue();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Slip Inspector Modal
+        function inspectSlip(id) {
+            const req = queueData.active.find(r => r.id === id) || queueData.history.find(r => r.id === id);
+            if (!req) return;
+            currentInspectingRequest = req;
+
+            document.getElementById('modal-slip-image').src = `/uploads/${req.slip_filename}`;
+            document.getElementById('modal-slip-bank').textContent = req.slip_bank || 'ธนาคารไทย (ตรวจจาก Mini-QR)';
+            document.getElementById('modal-slip-ref').textContent = req.slip_trans_ref || 'REF-N/A';
+            document.getElementById('modal-slip-amount').textContent = `${(req.tip_amount || 0).toFixed(2)} บาท`;
+            document.getElementById('modal-slip-method').textContent = req.slip_verification_method || 'ตรวจด้วยเอนจิน Mini-QR และเช็คความถูกต้อง';
+            document.getElementById('modal-slip-msg').textContent = req.slip_verification_msg || 'สลิปพร้อมใช้งาน';
+
+            const statusBadge = document.getElementById('modal-slip-status-badge');
+            if (req.slip_verified) {
+                statusBadge.textContent = 'ผ่านการตรวจสอบจริงแล้ว ✅';
+                statusBadge.className = 'font-bold px-2.5 py-0.5 rounded text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                document.getElementById('modal-btn-approve').classList.add('hidden');
+            } else {
+                statusBadge.textContent = 'รอตรวจสอบด้วยตนเอง ⚠️';
+                statusBadge.className = 'font-bold px-2.5 py-0.5 rounded text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                document.getElementById('modal-btn-approve').classList.remove('hidden');
+            }
+
+            document.getElementById('slip-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeSlipModal() {
+            document.getElementById('slip-modal').classList.add('hidden');
+            currentInspectingRequest = null;
+        }
+
+        async function approveCurrentSlip() {
+            if (!currentInspectingRequest) return;
+            try {
+                const res = await fetch(`/api/musician/request/${currentInspectingRequest.id}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'approve_slip' })
+                });
+                if (res.ok) {
+                    showToast("อนุมัติสลิปและนำเข้าคิวเรียบร้อย");
+                    closeSlipModal();
+                    loadQueue();
+                    loadStats();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function rejectCurrentSlip() {
+            if (!currentInspectingRequest) return;
+            closeSlipModal();
+            rejectSong(currentInspectingRequest.id);
+        }
+
+        // Repertoire Management Modal
+        async function openSongsModal() {
+            document.getElementById('songs-modal').classList.remove('hidden');
+            fetchAdminSongs();
+        }
+
+        function closeSongsModal() {
+            document.getElementById('songs-modal').classList.add('hidden');
+        }
+
+        async function fetchAdminSongs() {
+            try {
+                const res = await fetch('/api/songs');
+                repertoireSongs = await res.json();
+                renderAdminSongs(repertoireSongs);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderAdminSongs(songs) {
+            const list = document.getElementById('admin-song-list');
+            list.innerHTML = songs.map(s => `
+                <div class="card-glass p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-white">${s.title}</span>
+                        <span class="text-slate-400"> - ${s.artist}</span>
+                        <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded ml-1">${s.genre}</span>
+                        ${s.key ? `<span class="text-[10px] text-amber-400">(${s.key})</span>` : ''}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleSongAvailability(${s.id})" class="px-2 py-1 rounded text-[11px] ${s.is_available ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}">
+                            ${s.is_available ? 'ร้องได้' : 'พักเพลงนี้'}
+                        </button>
+                        <button onclick="deleteSongFromCatalog(${s.id})" class="text-rose-400 hover:text-rose-300 p-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function filterAdminSongs() {
+            const q = document.getElementById('admin-song-search').value.toLowerCase();
+            const filtered = repertoireSongs.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
+            renderAdminSongs(filtered);
+        }
+
+        async function submitNewSong(e) {
+            e.preventDefault();
+            const title = document.getElementById('new-song-title').value.trim();
+            const artist = document.getElementById('new-song-artist').value.trim();
+            const genre = document.getElementById('new-song-genre').value;
+
+            try {
+                const res = await fetch('/api/musician/songs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, artist, genre })
+                });
+                if (res.ok) {
+                    showToast(`เพิ่มเพลง "${title}" เข้าคลังแล้ว`);
+                    document.getElementById('new-song-title').value = '';
+                    document.getElementById('new-song-artist').value = '';
+                    fetchAdminSongs();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function toggleSongAvailability(id) {
+            try {
+                await fetch(`/api/musician/songs/${id}/toggle`, { method: 'PATCH' });
+                fetchAdminSongs();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function deleteSongFromCatalog(id) {
+            if (!confirm("ต้องการลบเพลงนี้ออกจากคลังหรือไม่?")) return;
+            try {
+                await fetch(`/api/musician/songs/${id}`, { method: 'DELETE' });
+                fetchAdminSongs();
+                showToast("ลบเพลงเรียบร้อย");
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Settings Modal
+        function openSettingsModal() {
+            document.getElementById('set-name').value = bandSettings.name || '';
+            document.getElementById('set-venue').value = bandSettings.venue_name || '';
+            document.getElementById('set-promptpay').value = bandSettings.promptpay_number || '';
+            document.getElementById('set-acc-name').value = bandSettings.promptpay_name || '';
+            document.getElementById('set-min-tip').value = bandSettings.min_tip || 0;
+            document.getElementById('set-demo-mode').checked = Boolean(bandSettings.demo_mode);
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('set-name').value.trim(),
+                venue_name: document.getElementById('set-venue').value.trim(),
+                promptpay_number: document.getElementById('set-promptpay').value.trim(),
+                promptpay_name: document.getElementById('set-acc-name').value.trim(),
+                min_tip: parseFloat(document.getElementById('set-min-tip').value) || 0,
+                slipok_api_key: document.getElementById('set-slipok-key').value.trim() || null,
+                slipok_branch_id: document.getElementById('set-slipok-branch').value.trim() || null,
+                demo_mode: document.getElementById('set-demo-mode').checked ? 1 : 0
+            };
+
+            try {
+                const res = await fetch('/api/musician/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    showToast("บันทึกการตั้งค่าเรียบร้อย");
+                    closeSettingsModal();
+                    loadBandInfo();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // WebSocket for live updates & audio alert
+        function setupWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.event === 'NEW_REQUEST') {
+                        playChime();
+                        showToast(`🎵 คำขอเพลงใหม่: "${msg.data.song_title}" จากโต๊ะ ${msg.data.table_no} (ทิป ${msg.data.tip_amount}฿)`);
+                        loadQueue();
+                        loadStats();
+                    } else if (msg.event === 'QUEUE_UPDATED') {
+                        loadQueue();
+                        loadStats();
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            };
+
+            ws.onclose = () => {
+                setTimeout(setupWebSocket, 3000);
+            };
+        }
+    </script>
+</body>
+</html>
