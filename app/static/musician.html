@@ -22,7 +22,7 @@
                         brand: {
                             50: '#ecfeff',
                             400: '#22d3ee',
-                            500: '#06b6d4',
+                            500: '#ec4899',
                             600: '#0891b2',
                             dark: '#0b0f19',
                             card: '#151d30',
@@ -38,24 +38,24 @@
     <style>
         body {
             font-family: 'Prompt', sans-serif;
-            background: #0b0f19;
+            background: radial-gradient(circle at top, #3b0628 0%, #15021a 60%, #09010c 100%);
             min-height: 100vh;
         }
         .card-glass {
-            background: rgba(21, 29, 48, 0.85);
+            background: rgba(38, 12, 46, 0.88);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(244, 114, 182, 0.15);
         }
         .neon-glow {
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.25);
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.4);
         }
         .gold-glow {
             box-shadow: 0 0 20px rgba(251, 191, 36, 0.25);
         }
         .sortable-ghost {
             opacity: 0.3;
-            background: rgba(6, 182, 212, 0.2);
-            border: 2px dashed #06b6d4;
+            background: rgba(236, 72, 153, 0.3);
+            border: 2px dashed #ec4899;
         }
     </style>
 </head>
@@ -67,7 +67,7 @@
             
             <!-- Band Info & Live Status -->
             <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md font-bold text-lg ring-2 ring-cyan-400/30">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-600 flex items-center justify-center text-white shadow-md font-bold text-lg ring-2 ring-pink-400/40">
                     <i data-lucide="music" class="w-6 h-6"></i>
                 </div>
                 <div>
@@ -79,7 +79,7 @@
                         </span>
                     </div>
                     <div class="flex items-center gap-2 text-xs text-slate-400">
-                        <span id="top-venue-name" class="text-cyan-400">The Moonlight Bar</span>
+                        <span id="top-venue-name" class="text-pink-400">The Moonlight Bar</span>
                         <span>•</span>
                         <span id="top-promptpay-info">พร้อมเพย์: 0891234567 (นายธนพล)</span>
                     </div>
@@ -101,14 +101,14 @@
                 </a>
 
                 <!-- Audience Link -->
-                <a href="/" target="_blank" class="px-3 py-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-xs text-cyan-300 font-semibold border border-cyan-500/40 flex items-center gap-1.5 transition-all">
+                <a href="/" target="_blank" class="px-3 py-2 rounded-xl bg-pink-600/20 hover:bg-pink-600/30 text-xs text-pink-300 font-semibold border border-pink-500/50 flex items-center gap-1.5 transition-all">
                     <i data-lucide="smartphone" class="w-4 h-4"></i>
                     <span>หน้าลูกค้าขอเพลง</span>
                 </a>
 
                 <!-- Songs Repertoire Manager Modal Trigger -->
                 <button onclick="openSongsModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-semibold border border-slate-700 flex items-center gap-1.5 transition-all">
-                    <i data-lucide="book-open" class="w-4 h-4 text-cyan-400"></i>
+                    <i data-lucide="book-open" class="w-4 h-4 text-pink-400"></i>
                     <span>คลังเพลงของวง</span>
                 </button>
 
@@ -136,12 +136,12 @@
                 </div>
             </div>
 
-            <div class="card-glass rounded-2xl p-4 border border-cyan-500/20 flex items-center justify-between">
+            <div class="card-glass rounded-2xl p-4 border border-pink-500/30 flex items-center justify-between">
                 <div>
                     <div class="text-xs text-slate-400 font-medium">คิวเพลงที่กำลังรอ ⏳</div>
-                    <div id="stat-queued-count" class="text-2xl font-bold text-cyan-400 mt-1">0 เพลง</div>
+                    <div id="stat-queued-count" class="text-2xl font-bold text-pink-400 mt-1">0 เพลง</div>
                 </div>
-                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold">
+                <div class="w-12 h-12 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center font-bold">
                     <i data-lucide="list-music" class="w-6 h-6"></i>
                 </div>
             </div>
@@ -168,26 +168,26 @@
         </div>
 
         <!-- NOW PLAYING HERO SECTION (Top Priority Display) -->
-        <div id="now-playing-container" class="card-glass rounded-2xl p-6 border-2 border-cyan-500/40 neon-glow relative overflow-hidden hidden">
-            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div id="now-playing-container" class="card-glass rounded-2xl p-6 border-2 border-pink-500/50 neon-glow relative overflow-hidden hidden">
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-pink-500/15 rounded-full blur-3xl pointer-events-none"></div>
             
             <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <!-- Left: Song details -->
                 <div class="flex items-start gap-5 min-w-0">
-                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg ring-4 ring-cyan-500/20">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-600 text-white flex items-center justify-center shrink-0 shadow-lg ring-4 ring-pink-500/30">
                         <i data-lucide="disc-3" class="w-9 h-9 animate-spin" style="animation-duration: 5s;"></i>
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-300 bg-cyan-500/20 px-3 py-1 rounded-full border border-cyan-400/30 flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-pink-300 bg-pink-500/25 px-3 py-1 rounded-full border border-pink-400/40 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-pink-400 animate-ping"></span>
                                 กำลังเล่นสดบนเวที (NOW PLAYING)
                             </span>
                             <span id="stage-table-badge" class="text-xs font-semibold text-slate-300 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700"></span>
                         </div>
                         <h2 id="stage-song-title" class="text-2xl md:text-3xl font-extrabold text-white tracking-wide truncate"></h2>
                         <div class="text-sm text-slate-300 flex items-center gap-2 mt-1">
-                            <span id="stage-artist" class="font-medium text-cyan-400"></span>
+                            <span id="stage-artist" class="font-medium text-pink-400"></span>
                             <span>•</span>
                             <span id="stage-sender" class="text-slate-400"></span>
                         </div>
@@ -215,15 +215,15 @@
             <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                 <div>
                     <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i data-lucide="list-ordered" class="w-5 h-5 text-cyan-400"></i>
+                        <i data-lucide="list-ordered" class="w-5 h-5 text-pink-400"></i>
                         <span>จัดการคิวเพลงที่ขอมา</span>
-                        <span id="queue-header-count" class="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full font-semibold">0 คิว</span>
+                        <span id="queue-header-count" class="text-xs bg-pink-500/25 text-pink-300 px-2 py-0.5 rounded-full font-semibold">0 คิว</span>
                     </h2>
                     <p class="text-xs text-slate-400 mt-0.5">เลือกรูปแบบการจัดเรียงคิว หรือลากเปลี่ยนลำดับคิวได้อิสระ</p>
                 </div>
 
                 <!-- SORT MODE SWITCHER (Tip Priority vs Time vs Manual) -->
-                <div class="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-700/80 text-xs">
+                <div class="flex items-center gap-1.5 bg-pink-950/40/90 p-1.5 rounded-xl border border-slate-700/80 text-xs">
                     <span class="text-slate-400 text-[11px] font-medium px-2">โหมดการเรียงคิว:</span>
                     
                     <button onclick="setSortMode('tip_priority')" id="sort-btn-tip" class="px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow">
@@ -246,7 +246,7 @@
             <!-- Queue Category Filters -->
             <div class="flex items-center justify-between gap-3 text-xs">
                 <div class="flex items-center gap-2">
-                    <button onclick="filterQueueTab('queued')" id="qtab-btn-queued" class="px-3.5 py-1.5 rounded-lg font-semibold bg-cyan-500 text-white flex items-center gap-1.5">
+                    <button onclick="filterQueueTab('queued')" id="qtab-btn-queued" class="px-3.5 py-1.5 rounded-lg font-semibold bg-pink-500 text-white flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-white"></span>
                         <span>คิวรอเล่น (<span id="qtab-cnt-queued">0</span>)</span>
                     </button>
@@ -278,7 +278,7 @@
         <div class="card-glass max-w-lg w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="shield-check" class="w-5 h-5 text-cyan-400"></i>
+                    <i data-lucide="shield-check" class="w-5 h-5 text-pink-400"></i>
                     <h3 class="font-bold text-white text-base">รายละเอียดสลิปโอนเงิน (ITMX Verification)</h3>
                 </div>
                 <button onclick="closeSlipModal()" class="text-slate-400 hover:text-white p-1">
@@ -292,7 +292,7 @@
             </div>
 
             <!-- Verification Metadata Breakdown -->
-            <div class="bg-slate-900/90 p-4 rounded-xl text-xs space-y-2 border border-slate-800">
+            <div class="bg-pink-950/40/90 p-4 rounded-xl text-xs space-y-2 border border-slate-800">
                 <div class="flex justify-between items-center">
                     <span class="text-slate-400">สถานะการตรวจสอบ:</span>
                     <span id="modal-slip-status-badge" class="font-bold px-2 py-0.5 rounded text-xs"></span>
@@ -303,7 +303,7 @@
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-slate-400">รหัสอ้างอิงธุรกรรม (TransRef):</span>
-                    <span id="modal-slip-ref" class="font-mono text-cyan-400 font-bold"></span>
+                    <span id="modal-slip-ref" class="font-mono text-pink-400 font-bold"></span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-slate-400">ยอดเงินที่ตรวจพบ:</span>
@@ -337,7 +337,7 @@
         <div class="card-glass max-w-2xl w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="book-marked" class="w-5 h-5 text-cyan-400"></i>
+                    <i data-lucide="book-marked" class="w-5 h-5 text-pink-400"></i>
                     <h3 class="font-bold text-white text-base">จัดการคลังเพลงของวง (Song Catalog)</h3>
                 </div>
                 <button onclick="closeSongsModal()" class="text-slate-400 hover:text-white p-1">
@@ -346,24 +346,24 @@
             </div>
 
             <!-- Add New Song Inline Form -->
-            <form id="add-song-form" onsubmit="submitNewSong(event)" class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
-                <input type="text" id="new-song-title" required placeholder="ชื่อเพลงใหม่ *" class="md:col-span-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
-                <input type="text" id="new-song-artist" placeholder="ศิลปิน" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
-                <select id="new-song-genre" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-cyan-400">
+            <form id="add-song-form" onsubmit="submitNewSong(event)" class="bg-pink-950/40/80 p-3.5 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-5 gap-2 text-xs">
+                <input type="text" id="new-song-title" required placeholder="ชื่อเพลงใหม่ *" class="md:col-span-2 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-pink-400">
+                <input type="text" id="new-song-artist" placeholder="ศิลปิน" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-pink-400">
+                <select id="new-song-genre" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-pink-400">
                     <option value="Pop">Pop</option>
                     <option value="Rock">Rock</option>
                     <option value="Indie">Indie</option>
                     <option value="ลูกทุ่ง">ลูกทุ่ง/เพื่อชีวิต</option>
                     <option value="International">สากล</option>
                 </select>
-                <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold rounded-lg px-3 py-2 flex items-center justify-center gap-1 transition-all">
+                <button type="submit" class="bg-pink-500 hover:bg-pink-400 text-white font-bold rounded-lg px-3 py-2 flex items-center justify-center gap-1 transition-all">
                     <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มเพลง
                 </button>
             </form>
 
             <!-- Repertoire Song List -->
             <div class="relative">
-                <input type="text" id="admin-song-search" oninput="filterAdminSongs()" placeholder="ค้นหาเพลงในคลัง..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+                <input type="text" id="admin-song-search" oninput="filterAdminSongs()" placeholder="ค้นหาเพลงในคลัง..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-400">
             </div>
 
             <div id="admin-song-list" class="space-y-1.5 max-h-80 overflow-y-auto pr-1 text-xs">
@@ -377,7 +377,7 @@
         <div class="card-glass max-w-lg w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="settings" class="w-5 h-5 text-cyan-400"></i>
+                    <i data-lucide="settings" class="w-5 h-5 text-pink-400"></i>
                     <h3 class="font-bold text-white text-base">ตั้งค่าวและระบบตรวจสอบสลิป</h3>
                 </div>
                 <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1">
@@ -388,34 +388,34 @@
             <form id="settings-form" onsubmit="saveSettings(event)" class="space-y-3 text-xs">
                 <div>
                     <label class="block font-medium text-slate-300 mb-1">ชื่อวงดนตรี</label>
-                    <input type="text" id="set-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    <input type="text" id="set-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-pink-400">
                 </div>
                 <div>
                     <label class="block font-medium text-slate-300 mb-1">ชื่อร้าน / บาร์ที่เล่นสด</label>
-                    <input type="text" id="set-venue" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    <input type="text" id="set-venue" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-pink-400">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-medium text-slate-300 mb-1">เบอร์พร้อมเพย์ / เลขบัตร ปชช.</label>
-                        <input type="text" id="set-promptpay" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                        <input type="text" id="set-promptpay" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-pink-400">
                     </div>
                     <div>
                         <label class="block font-medium text-slate-300 mb-1">ชื่อบัญชีรับเงิน (แสดงหน้า QR)</label>
-                        <input type="text" id="set-acc-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                        <input type="text" id="set-acc-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-pink-400">
                     </div>
                 </div>
                 <div>
                     <label class="block font-medium text-slate-300 mb-1">ยอดทิปขั้นต่ำในการขอเพลง (บาท)</label>
-                    <input type="number" id="set-min-tip" min="0" step="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400">
+                    <input type="number" id="set-min-tip" min="0" step="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-pink-400">
                 </div>
 
                 <!-- SlipOK Live Integration Config -->
-                <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                <div class="bg-pink-950/40/90 p-3.5 rounded-xl border border-slate-800 space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-amber-300 flex items-center gap-1.5">
                             <i data-lucide="shield" class="w-4 h-4"></i> ระบบเชื่อมต่อ SlipOK API (ตรวจสอบเงินเข้าจริง)
                         </span>
-                        <a href="https://slipok.com" target="_blank" class="text-[10px] text-cyan-400 underline">ขอ API Key</a>
+                        <a href="https://slipok.com" target="_blank" class="text-[10px] text-pink-400 underline">ขอ API Key</a>
                     </div>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
                         หากระบุ API Key ระบบจะเช็คไปยังเครือข่าย ITMX ของธนาคารโดยตรงว่ามีเงินเข้าบัญชีจริงตามยอดหรือไม่ หากไม่ระบุ ระบบจะใช้เอนจินสแกน Mini-QR และตรวจจับสลิปซ้ำ (Anti-Duplicate) ให้อัตโนมัติ
@@ -433,7 +433,7 @@
                     </label>
                 </div>
 
-                <button type="submit" class="w-full py-3 rounded-xl font-bold text-xs bg-cyan-500 hover:bg-cyan-400 text-white transition-all shadow-lg mt-2">
+                <button type="submit" class="w-full py-3 rounded-xl font-bold text-xs bg-pink-500 hover:bg-pink-400 text-white transition-all shadow-lg mt-2">
                     บันทึกการตั้งค่า
                 </button>
             </form>
@@ -441,8 +441,8 @@
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900/95 text-white border border-slate-700 px-4 py-3 rounded-xl text-xs shadow-2xl flex items-center gap-2 transition-all opacity-0 pointer-events-none">
-        <i id="toast-icon" data-lucide="info" class="w-4 h-4 text-cyan-400"></i>
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-pink-950/40/95 text-white border border-slate-700 px-4 py-3 rounded-xl text-xs shadow-2xl flex items-center gap-2 transition-all opacity-0 pointer-events-none">
+        <i id="toast-icon" data-lucide="info" class="w-4 h-4 text-pink-400"></i>
         <span id="toast-msg">แจ้งเตือน</span>
     </div>
 
@@ -521,7 +521,7 @@
             const icon = document.getElementById('toast-icon');
             const txt = document.getElementById('toast-msg');
             txt.textContent = msg;
-            icon.className = isError ? 'w-4 h-4 text-rose-400' : 'w-4 h-4 text-cyan-400';
+            icon.className = isError ? 'w-4 h-4 text-rose-400' : 'w-4 h-4 text-pink-400';
             toast.classList.remove('opacity-0', 'pointer-events-none');
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'pointer-events-none');
@@ -635,7 +635,7 @@
                         <div class="flex items-start gap-3 min-w-0 flex-1">
                             <!-- Drag Handle -->
                             ${activeQueueTab === 'queued' ? `
-                                <div class="cursor-grab active:cursor-grabbing text-slate-500 hover:text-cyan-400 p-1 rounded hover:bg-slate-800 shrink-0 mt-1">
+                                <div class="cursor-grab active:cursor-grabbing text-slate-500 hover:text-pink-400 p-1 rounded hover:bg-slate-800 shrink-0 mt-1">
                                     <i data-lucide="grip-vertical" class="w-5 h-5"></i>
                                 </div>
                             ` : ''}
@@ -650,7 +650,7 @@
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <h3 class="font-bold text-white text-base truncate">${item.song_title}</h3>
                                     ${item.artist ? `<span class="text-xs text-slate-400">(${item.artist})</span>` : ''}
-                                    <span class="text-xs bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded font-medium border border-cyan-500/20">
+                                    <span class="text-xs bg-pink-500/15 text-pink-400 px-2 py-0.5 rounded font-medium border border-pink-500/30">
                                         โต๊ะ ${item.table_no || '-'}
                                     </span>
                                 </div>
@@ -695,7 +695,7 @@
                             <div class="flex items-center gap-1.5">
                                 ${activeQueueTab === 'queued' ? `
                                     <!-- Play Now -->
-                                    <button onclick="playSong(${item.id})" class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-cyan-500 hover:bg-cyan-400 text-white shadow flex items-center gap-1.5 transition-all">
+                                    <button onclick="playSong(${item.id})" class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-pink-500 hover:bg-pink-400 text-white shadow flex items-center gap-1.5 transition-all">
                                         <i data-lucide="play" class="w-3.5 h-3.5"></i>
                                         <span>เริ่มเล่น</span>
                                     </button>
@@ -802,7 +802,7 @@
             ['queued', 'pending_slip', 'history'].forEach(t => {
                 const btn = document.getElementById(`qtab-btn-${t}`);
                 if (t === tab) {
-                    btn.className = 'px-3.5 py-1.5 rounded-lg font-semibold bg-cyan-500 text-white flex items-center gap-1.5';
+                    btn.className = 'px-3.5 py-1.5 rounded-lg font-semibold bg-pink-500 text-white flex items-center gap-1.5';
                 } else {
                     btn.className = 'px-3.5 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white flex items-center gap-1.5';
                 }
@@ -997,7 +997,7 @@
                     <div>
                         <span class="font-bold text-white">${s.title}</span>
                         <span class="text-slate-400"> - ${s.artist}</span>
-                        <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded ml-1">${s.genre}</span>
+                        <span class="text-[10px] text-pink-400 bg-pink-500/15 px-1.5 py-0.5 rounded ml-1">${s.genre}</span>
                         ${s.key ? `<span class="text-[10px] text-amber-400">(${s.key})</span>` : ''}
                     </div>
                     <div class="flex items-center gap-2">
