@@ -149,29 +149,31 @@ async def verify_with_slipok(
     expected_promptpay: str | None = None,
     expected_receiver_name: str | None = None
 ) -> SlipVerificationResult | None:
-    """Calls SlipOK Live API (https://api.slipok.com/api/v2/detect)."""
+    """Calls SlipOK Live API (https://api.slipok.com/api/line/apikey/{branch_id})."""
     if not api_key:
         return None
-        
-    url = f"https://api.slipok.com/api/v2/detect"
+
+    # Correct endpoint: https://api.slipok.com/api/line/apikey/{branch_id}
     if branch_id:
-        url += f"/{branch_id}"
-        
+        url = f"https://api.slipok.com/api/line/apikey/{branch_id}"
+    else:
+        url = "https://api.slipok.com/api/line/apikey/unknown"
+
     headers = {
         "x-authorization": api_key.strip()
     }
-    
+
     try:
         async with httpx.AsyncClient(timeout=12.0) as client:
             if raw_qr:
-                # Fast payload check
-                payload = {"data": raw_qr}
+                # Fast payload check using form data (SlipOK requires multipart)
+                form_data = {"data": raw_qr, "log": "true"}
                 if expected_amount:
-                    payload["amount"] = expected_amount
-                res = await client.post(url, json=payload, headers=headers)
+                    form_data["amount"] = str(expected_amount)
+                res = await client.post(url, data=form_data, headers=headers)
             elif image_bytes:
-                files = {"file": ("slip.jpg", image_bytes, "image/jpeg")}
-                data = {}
+                files = {"files": ("slip.jpg", image_bytes, "image/jpeg")}
+                data = {"log": "true"}
                 if expected_amount:
                     data["amount"] = str(expected_amount)
                 res = await client.post(url, files=files, data=data, headers=headers)
