@@ -166,12 +166,13 @@ async def verify_with_slipok(
     try:
         async with httpx.AsyncClient(timeout=12.0) as client:
             if raw_qr:
-                # Fast payload check using form data (SlipOK requires multipart)
-                form_data = {"data": raw_qr, "log": "true"}
+                # SlipOK accepts JSON body for QR data
+                payload = {"data": raw_qr, "log": True}
                 if expected_amount:
-                    form_data["amount"] = str(expected_amount)
-                res = await client.post(url, data=form_data, headers=headers)
+                    payload["amount"] = expected_amount
+                res = await client.post(url, json=payload, headers=headers)
             elif image_bytes:
+                # For image upload, use multipart/form-data
                 files = {"files": ("slip.jpg", image_bytes, "image/jpeg")}
                 data = {"log": "true"}
                 if expected_amount:
