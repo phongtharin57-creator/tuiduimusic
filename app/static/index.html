@@ -202,7 +202,10 @@
                 <!-- Table & Sender Name -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1.5">หมายเลขโต๊ะ <span class="text-rose-400">*</span></label>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5 flex items-center justify-between">
+                            <span>หมายเลขโต๊ะ <span class="text-rose-400">*</span></span>
+                            <span id="table-auto-badge" class="hidden text-[10px] text-pink-400 font-semibold bg-pink-500/20 px-1.5 py-0.5 rounded border border-pink-400/30">📍 ล็อคตามป้าย</span>
+                        </label>
                         <div class="relative">
                             <i data-lucide="map-pin" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
                             <input type="text" id="req-table" required placeholder="เช่น โต๊ะ 5, VIP 2"
@@ -283,9 +286,21 @@
                         </div>
 
                         <div class="text-[11px] text-slate-300 mt-2 space-y-0.5">
-                            <p class="font-medium text-slate-200">ชื่อบัญชี: <span id="promptpay-name-display" class="text-pink-300">นายธนพล มีดนตรี (วง The Soundwave)</span></p>
-                            <p class="text-slate-400">เลขพร้อมเพย์: <span id="promptpay-no-display" class="text-slate-300">0891234567</span></p>
+                            <p class="font-medium text-slate-200">ชื่อบัญชี: <span id="promptpay-name-display" class="text-pink-300">นาย พงศ์ธาริน วงศ์ประไพโรจน์</span></p>
+                            <p class="text-slate-400">เลขบัญชี/พร้อมเพย์: <span id="promptpay-no-display" class="text-slate-200 font-mono font-semibold">004605000636656</span></p>
                             <p class="text-[10px] text-slate-400 pt-1">สแกนได้จากทุกธนาคาร (K PLUS, SCB EASY, Krungthai NEXT, ttb touch ฯลฯ)</p>
+                        </div>
+
+                        <!-- Action buttons for mobile audience -->
+                        <div class="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t border-slate-700/60">
+                            <button type="button" onclick="downloadQRCode()" class="py-2.5 px-3 rounded-xl bg-pink-600/30 hover:bg-pink-600/50 border border-pink-500/50 text-xs font-semibold text-pink-200 flex items-center justify-center gap-1.5 transition-all shadow">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>บันทึกรูป QR ลงเครื่อง</span>
+                            </button>
+                            <button type="button" onclick="copyPromptPayNumber()" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition-all shadow">
+                                <i data-lucide="copy" class="w-3.5 h-3.5 text-amber-400"></i>
+                                <span>คัดลอกเลขบัญชี</span>
+                            </button>
                         </div>
                     </div>
 
@@ -406,6 +421,33 @@
         </div>
     </div>
 
+    <!-- Floating My Song Tracker Banner -->
+    <div id="my-song-tracker" class="fixed bottom-4 left-4 right-4 max-w-lg mx-auto z-40 hidden transition-all duration-300">
+        <div class="glass p-3.5 rounded-2xl border border-pink-500/60 neon-glow flex items-center justify-between shadow-2xl bg-gradient-to-r from-pink-950/95 via-purple-950/95 to-pink-950/95 backdrop-blur-md">
+            <div class="flex items-center gap-3 min-w-0">
+                <div id="tracker-icon-bg" class="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
+                    <i id="tracker-icon" data-lucide="music-2" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span id="tracker-status-badge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/25 text-pink-300 border border-pink-400/40">รอคิว</span>
+                        <span id="tracker-queue-pos" class="text-xs text-amber-300 font-bold">คิวที่ #...</span>
+                    </div>
+                    <div id="tracker-song-title" class="font-bold text-sm text-white truncate mt-0.5">เพลงของคุณ</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="switchTab('queue')" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-pink-500 text-white hover:bg-pink-400 transition-all flex items-center gap-1 shadow-md">
+                    <span>ดูคิว</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="dismissTracker()" title="ปิดการแจ้งเตือนนี้" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white border border-slate-700 px-4 py-2.5 rounded-xl text-xs shadow-2xl flex items-center gap-2 transition-all opacity-0 pointer-events-none">
         <i id="toast-icon" data-lucide="info" class="w-4 h-4 text-pink-400"></i>
@@ -424,12 +466,117 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            checkTableParamFromURL();
             fetchBandInfo();
             fetchSongs();
             fetchQueue();
             setupDropzone();
             setupWebSocket();
+            checkMySongTracker();
         });
+
+        function checkTableParamFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const table = params.get('table') || params.get('t');
+            if (table) {
+                const tableInput = document.getElementById('req-table');
+                tableInput.value = table;
+                tableInput.classList.add('border-pink-500', 'bg-pink-950/70');
+                const badge = document.getElementById('table-auto-badge');
+                if (badge) {
+                    badge.textContent = `📍 ล็อคโต๊ะ ${table}`;
+                    badge.classList.remove('hidden');
+                }
+            }
+        }
+
+        async function downloadQRCode() {
+            try {
+                const qrImg = document.getElementById('promptpay-qr-img');
+                const res = await fetch(qrImg.src);
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `PromptPay_QR_${currentTip}THB.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                showToast("บันทึกรูป QR ลงเครื่องเรียบร้อย นำไปเปิดในแอปธนาคารได้เลย");
+            } catch (err) {
+                console.error(err);
+                showToast("ไม่สามารถดาวน์โหลดรูป QR ได้", true);
+            }
+        }
+
+        function copyPromptPayNumber() {
+            const no = bandData?.promptpay_number || "004605000636656";
+            navigator.clipboard.writeText(no).then(() => {
+                showToast(`คัดลอกเลขบัญชี/พร้อมเพย์แล้ว: ${no}`);
+            }).catch(() => {
+                showToast(`เลขพร้อมเพย์: ${no}`);
+            });
+        }
+
+        async function checkMySongTracker() {
+            const myReqId = localStorage.getItem('my_request_id');
+            const mySongTitle = localStorage.getItem('my_request_title');
+            const trackerEl = document.getElementById('my-song-tracker');
+            
+            if (!myReqId || !trackerEl) return;
+
+            try {
+                const res = await fetch(`/api/request/${myReqId}`);
+                if (!res.ok) {
+                    trackerEl.classList.add('hidden');
+                    return;
+                }
+                const req = await res.json();
+                
+                if (req.status === 'completed' || req.status === 'rejected') {
+                    if (req.status === 'completed') {
+                        document.getElementById('tracker-status-badge').textContent = 'เล่นจบแล้ว';
+                        document.getElementById('tracker-status-badge').className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-400/30';
+                        document.getElementById('tracker-queue-pos').textContent = 'ขอบคุณที่ฟังครับ 🎵';
+                        document.getElementById('tracker-song-title').textContent = req.song_title;
+                        trackerEl.classList.remove('hidden');
+                        setTimeout(() => {
+                            localStorage.removeItem('my_request_id');
+                            localStorage.removeItem('my_request_title');
+                            trackerEl.classList.add('hidden');
+                        }, 12000);
+                    } else {
+                        trackerEl.classList.add('hidden');
+                    }
+                    return;
+                }
+
+                trackerEl.classList.remove('hidden');
+                document.getElementById('tracker-song-title').textContent = req.song_title;
+
+                if (req.status === 'playing') {
+                    document.getElementById('tracker-status-badge').textContent = '🔥 กำลังเล่นสด!';
+                    document.getElementById('tracker-status-badge').className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-400 animate-pulse';
+                    document.getElementById('tracker-queue-pos').textContent = 'ฟังอยู่ตอนนี้เลย!';
+                    document.getElementById('tracker-icon-bg').className = 'w-10 h-10 rounded-xl bg-emerald-500/25 text-emerald-400 flex items-center justify-center shrink-0 ring-2 ring-emerald-400/50';
+                } else if (req.position_in_queue !== null) {
+                    document.getElementById('tracker-status-badge').textContent = 'รอคิว';
+                    document.getElementById('tracker-status-badge').className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/25 text-pink-300 border border-pink-400/40';
+                    document.getElementById('tracker-queue-pos').textContent = `รออีก ${req.position_in_queue} คิว`;
+                    document.getElementById('tracker-icon-bg').className = 'w-10 h-10 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center shrink-0';
+                }
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function dismissTracker() {
+            localStorage.removeItem('my_request_id');
+            localStorage.removeItem('my_request_title');
+            document.getElementById('my-song-tracker').classList.add('hidden');
+        }
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toast');
@@ -782,6 +929,13 @@
 
                 document.getElementById('success-modal').classList.remove('hidden');
 
+                // Save to localStorage for floating tracker
+                if (data.request_id) {
+                    localStorage.setItem('my_request_id', data.request_id);
+                    localStorage.setItem('my_request_title', title);
+                    checkMySongTracker();
+                }
+
                 // Reset form
                 document.getElementById('song-request-form').reset();
                 clearSelectedSong();
@@ -814,6 +968,7 @@
                     if (msg.event === 'NEW_REQUEST' || msg.event === 'QUEUE_UPDATED') {
                         fetchQueue();
                         fetchBandInfo();
+                        checkMySongTracker();
                     }
                 } catch (e) {
                     console.error(e);

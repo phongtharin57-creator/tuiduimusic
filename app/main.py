@@ -199,6 +199,28 @@ def get_promptpay_qr(amount: float = 0.0):
     return Response(content=buf.getvalue(), media_type="image/png")
 
 
+@app.get("/api/table-qr")
+def get_table_qr(table: str = "1", base_url: str = ""):
+    """Generates QR code that links directly to table's song request URL."""
+    base = base_url.strip() or "https://tuiduimusic.onrender.com"
+    target_url = f"{base}/?table={table.strip()}"
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=8,
+        border=2,
+    )
+    qr.add_data(target_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#180424", back_color="white")
+    
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return Response(content=buf.getvalue(), media_type="image/png")
+
+
 @app.post("/api/request")
 async def submit_song_request(
     song_title: str = Form(...),
