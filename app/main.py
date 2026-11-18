@@ -282,7 +282,7 @@ async def submit_song_request(
                 )
             elif verification_result.status == "AMOUNT_MISMATCH":
                 raise HTTPException(status_code=400, detail=verification_result.message)
-            elif verification_result.status in ("WRONG_RECEIVER", "EXPIRED_SLIP", "INVALID_SLIP"):
+            elif verification_result.status in ("WRONG_RECEIVER", "EXPIRED_SLIP", "INVALID_SLIP", "API_ERROR", "CONFIG_ERROR", "NO_DATA"):
                 raise HTTPException(status_code=400, detail=verification_result.message)
             elif verification_result.status in ("MANUAL_REVIEW", "SUSPICIOUS", "NO_QR"):
                 if not band["demo_mode"]:

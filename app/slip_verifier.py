@@ -149,7 +149,11 @@ async def verify_with_slipok(
     expected_promptpay: str | None = None,
     expected_receiver_name: str | None = None
 ) -> SlipVerificationResult | None:
-    """Calls SlipOK Live API (https://api.slipok.com/api/line/apikey/{branch_id})."""
+    """Calls SlipOK Live API (https://api.slipok.com/api/line/apikey/{branch_id}).
+    
+    Tries QR data first, then falls back to image upload if QR check fails.
+    Returns a definitive result (VERIFIED or error) — never None when API key is set.
+    """
     if not api_key:
         return None
 
@@ -157,29 +161,52 @@ async def verify_with_slipok(
     if branch_id:
         url = f"https://api.slipok.com/api/line/apikey/{branch_id}"
     else:
-        url = "https://api.slipok.com/api/line/apikey/unknown"
+        return SlipVerificationResult(
+            is_valid=False, status="CONFIG_ERROR",
+            message="❌ ไม่ได้ตั้งค่า Branch ID สำหรับ SlipOK กรุณาแจ้งนักดนตรี",
+            verification_method="slipok_live"
+        )
 
     headers = {
         "x-authorization": api_key.strip()
     }
 
+    res = None
     try:
-        async with httpx.AsyncClient(timeout=12.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            # Strategy: Try QR data first, if it fails try image upload
             if raw_qr:
-                # SlipOK accepts JSON body for QR data
                 payload = {"data": raw_qr, "log": True}
                 if expected_amount:
                     payload["amount"] = expected_amount
                 res = await client.post(url, json=payload, headers=headers)
+                
+                # If QR data was rejected (not a payment QR), try image upload as fallback
+                if res.status_code != 200 and image_bytes:
+                    resp_json = res.json() if res.headers.get("content-type", "").startswith("application/json") else {}
+                    err_code = resp_json.get("code", 0)
+                    # 1008 = QR ไม่ใช่ QR สำหรับตรวจสอบ, 1007 = ไม่พบ QR
+                    if err_code in (1007, 1008, 1009):
+                        print(f"SlipOK QR data rejected (code {err_code}), trying image upload...")
+                        files = {"files": ("slip.jpg", image_bytes, "image/jpeg")}
+                        data = {"log": "true"}
+                        if expected_amount:
+                            data["amount"] = str(expected_amount)
+                        res = await client.post(url, files=files, data=data, headers=headers)
+
             elif image_bytes:
-                # For image upload, use multipart/form-data
+                # No QR decoded locally — send image directly for SlipOK OCR
                 files = {"files": ("slip.jpg", image_bytes, "image/jpeg")}
                 data = {"log": "true"}
                 if expected_amount:
                     data["amount"] = str(expected_amount)
                 res = await client.post(url, files=files, data=data, headers=headers)
             else:
-                return None
+                return SlipVerificationResult(
+                    is_valid=False, status="NO_DATA",
+                    message="❌ ไม่มีข้อมูลสลิปให้ตรวจสอบ",
+                    verification_method="slipok_live"
+                )
                 
             if res.status_code == 200:
                 resp_json = res.json()
@@ -267,16 +294,44 @@ async def verify_with_slipok(
                     )
                 else:
                     msg = resp_json.get("message", "SlipOK ตรวจสอบสลิปไม่ผ่าน")
+                    code = resp_json.get("code", 0)
                     return SlipVerificationResult(
                         is_valid=False,
                         status="INVALID_SLIP",
-                        message=f"ธนาคารแจ้ง: {msg}",
+                        message=f"❌ ธนาคารแจ้ง: {msg} (รหัส {code})",
                         verification_method="slipok_live"
                     )
+            else:
+                # Non-200 response from SlipOK
+                try:
+                    err_json = res.json()
+                    err_msg = err_json.get("message", "ระบบตรวจสลิปไม่สามารถตรวจสอบได้")
+                    err_code = err_json.get("code", res.status_code)
+                except Exception:
+                    err_msg = f"SlipOK HTTP {res.status_code}"
+                    err_code = res.status_code
+                return SlipVerificationResult(
+                    is_valid=False,
+                    status="INVALID_SLIP",
+                    message=f"❌ ตรวจสลิปไม่ผ่าน: {err_msg} (รหัส {err_code})",
+                    verification_method="slipok_live"
+                )
+    except httpx.TimeoutException:
+        print("SlipOK API timed out")
+        return SlipVerificationResult(
+            is_valid=False,
+            status="API_ERROR",
+            message="❌ ระบบตรวจสลิปหมดเวลาเชื่อมต่อ กรุณาลองอีกครั้ง",
+            verification_method="slipok_live"
+        )
     except Exception as e:
         print(f"SlipOK API call failed: {e}")
-        return None
-    return None
+        return SlipVerificationResult(
+            is_valid=False,
+            status="API_ERROR",
+            message="❌ ระบบตรวจสลิปขัดข้อง กรุณาลองอีกครั้ง",
+            verification_method="slipok_live"
+        )
 
 
 async def verify_slip(
@@ -286,20 +341,63 @@ async def verify_slip(
     existing_trans_refs: set[str]
 ) -> SlipVerificationResult:
     """
-    Main verification pipeline:
-    1. Scan and decode QR code from slip image.
-    2. Check if live SlipOK API key is configured and verify through ITMX.
-    3. Run built-in Thai bank QR decoder & check duplicate transRef against database.
-    4. Validate tip amount & timestamps.
+    Main verification pipeline (STRICT MODE when SlipOK is configured):
+    
+    When SlipOK API key is configured + demo_mode is OFF:
+      → ONLY SlipOK bank verification counts. No local fallback.
+      → If SlipOK says INVALID/ERROR → REJECT (no shortcuts)
+      → Always check for duplicate trans_ref in local DB
+    
+    When demo_mode is ON:
+      → Allow local QR + sandbox simulation for testing only
     """
     qr_text = extract_qr_from_image(image_bytes)
     
-    # 1. Try Live SlipOK API if configured
     slipok_key = band_settings.get("slipok_api_key")
     branch_id = band_settings.get("slipok_branch_id")
     expected_pp = band_settings.get("promptpay_number")
     expected_name = band_settings.get("promptpay_name")
+    is_demo = band_settings.get("demo_mode", True)
 
+    # ════════════════════════════════════════════════════
+    # LIVE MODE: SlipOK configured + demo_mode OFF
+    # → STRICT: Only bank-verified slips accepted
+    # ════════════════════════════════════════════════════
+    if slipok_key and not is_demo:
+        live_res = await verify_with_slipok(
+            api_key=slipok_key,
+            branch_id=branch_id,
+            raw_qr=qr_text,
+            image_bytes=image_bytes,
+            expected_amount=expected_amount,
+            expected_promptpay=expected_pp,
+            expected_receiver_name=expected_name
+        )
+        
+        if live_res is None:
+            # Should not happen with new code, but safety net
+            return SlipVerificationResult(
+                is_valid=False,
+                status="API_ERROR",
+                message="❌ ไม่สามารถเชื่อมต่อระบบตรวจสลิปได้ กรุณาลองอีกครั้ง",
+                verification_method="slipok_live"
+            )
+        
+        # Check duplicate in local database (even if SlipOK said OK)
+        if live_res.is_valid and live_res.trans_ref and live_res.trans_ref in existing_trans_refs:
+            live_res.is_valid = False
+            live_res.status = "DUPLICATE"
+            live_res.message = f"❌ สลิปนี้เคยถูกใช้ส่งขอเพลงไปแล้ว (TransRef ซ้ำ: {live_res.trans_ref})"
+        
+        # Return SlipOK result directly — no fallback to local QR
+        return live_res
+
+    # ════════════════════════════════════════════════════
+    # DEMO/TESTING MODE or no SlipOK key
+    # → Allow local QR verification + sandbox simulation
+    # ════════════════════════════════════════════════════
+
+    # Try SlipOK first even in demo mode (if key is set)
     if slipok_key:
         live_res = await verify_with_slipok(
             api_key=slipok_key,
@@ -310,38 +408,27 @@ async def verify_slip(
             expected_promptpay=expected_pp,
             expected_receiver_name=expected_name
         )
-        if live_res is not None:
-            # Check duplicate in local database as well
+        if live_res is not None and live_res.is_valid:
             if live_res.trans_ref and live_res.trans_ref in existing_trans_refs:
                 live_res.is_valid = False
                 live_res.status = "DUPLICATE"
                 live_res.message = f"❌ สลิปนี้เคยถูกใช้ส่งขอเพลงไปแล้ว (TransRef ซ้ำ: {live_res.trans_ref})"
             return live_res
 
-    # 2. Local QR Code Analysis
+    # Local QR Code Analysis (demo mode only)
     if not qr_text:
-        # Check if Sandbox/Demo mode allows manual review
-        if band_settings.get("allow_manual_approval", True):
-            return SlipVerificationResult(
-                is_valid=False,
-                status="MANUAL_REVIEW",
-                message="ตรวจไม่พบ QR Code บนสลิป (ส่งให้นักดนตรีตรวจสอบสลิปด้วยตาเปล่าที่หน้าเวที)",
-                amount=expected_amount,
-                verification_method="manual_review"
-            )
-        else:
-            return SlipVerificationResult(
-                is_valid=False,
-                status="NO_QR",
-                message="ไม่พบ Mini-QR Code บนสลิป กรุณาอัปโหลดสลิปที่มี QR Code ชัดเจน",
-                verification_method="local_qr"
-            )
+        return SlipVerificationResult(
+            is_valid=False,
+            status="NO_QR",
+            message="❌ ไม่พบ QR Code บนสลิป กรุณาอัปโหลดสลิปที่มี QR Code ชัดเจน",
+            verification_method="local_qr"
+        )
 
     parsed = parse_thai_slip_qr(qr_text)
     trans_ref = parsed.get("trans_ref")
     bank_code = parsed.get("bank_code")
     
-    # Check if duplicate slip (Replay attack prevention)
+    # Check duplicate slip
     if trans_ref and trans_ref in existing_trans_refs:
         bank_name = THAI_BANKS.get(bank_code, {}).get("name", "ธนาคารไทย")
         return SlipVerificationResult(
@@ -360,25 +447,24 @@ async def verify_slip(
         return SlipVerificationResult(
             is_valid=True,
             status="VERIFIED",
-            message=f"✅ สลิปถูกต้อง ตรวจพบ Mini-QR ของ {bank_name} (Ref: {trans_ref or 'OK'})",
+            message=f"✅ [Demo] สลิป QR ตรวจพบ Mini-QR ของ {bank_name} (Ref: {trans_ref or 'OK'})",
             bank_code=bank_code,
             bank_name=bank_name,
             trans_ref=trans_ref or f"REF-{int(datetime.datetime.now().timestamp())}",
             amount=expected_amount,
             raw_qr=qr_text,
-            verification_method="local_qr_verified"
+            verification_method="local_qr_demo"
         )
         
-    # Sandbox / Demo simulator mode check
-    if band_settings.get("demo_mode", True):
-        # Allow test slips with valid format
+    # Sandbox simulation
+    if is_demo:
         ref_id = f"SIM-{int(datetime.datetime.now().timestamp())}"
         return SlipVerificationResult(
             is_valid=True,
             status="VERIFIED",
-            message=f"✅ สลิปทดสอบจำลอง (Sandbox Verified - Ref: {ref_id})",
+            message=f"✅ [Sandbox] สลิปทดสอบจำลอง (Ref: {ref_id})",
             bank_code="004",
-            bank_name="Kasikornbank (Sandbox Simulation)",
+            bank_name="Kasikornbank (Sandbox)",
             trans_ref=ref_id,
             amount=expected_amount,
             raw_qr=qr_text,
@@ -388,7 +474,7 @@ async def verify_slip(
     return SlipVerificationResult(
         is_valid=False,
         status="SUSPICIOUS",
-        message="QR Code บนสลิปไม่ตรงกับรูปแบบมาตรฐานของธนาคารไทย ส่งให้นักดนตรีตรวจสอบ",
+        message="❌ QR Code บนสลิปไม่ตรงกับรูปแบบมาตรฐานธนาคารไทย",
         raw_qr=qr_text,
         verification_method="local_qr"
     )
